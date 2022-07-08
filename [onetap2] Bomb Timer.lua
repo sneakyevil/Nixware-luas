@@ -28,11 +28,34 @@ local function CenterShadowText(pos, text)
     renderer.text(text, m_Font, pos, m_FontSize, color_t.new(255, 255, 255, 255))
 end
 
+local plant_end     = 0.0
+local plant_length  = 3.25
+
+client.register_callback("bomb_beginplant", function(event)
+    plant_end = globalvars.get_current_time() + plant_length
+end)
+
+client.register_callback("bomb_abortplant", function(event)
+    plant_end = 0.0
+end)
+
 local m_ScreenSize = engine.get_screen_size()
 
 client.register_callback("paint", function()
     local bomb = GetPlantedBomb()
-    if (bomb == nil) then return end
+    if (bomb == nil) then
+
+        local plant_time         = plant_end - globalvars.get_current_time()
+        local plant_percentage   = plant_time / plant_length
+        if (0.0 > plant_time) then return end
+
+        plant_percentage = 1.0 - plant_percentage
+        renderer.rect_filled(vec2_t.new(0, 0), vec2_t.new(m_ScreenSize.x * plant_percentage, 14), color_t.new(200, 100, 0, 100))
+        CenterShadowText(vec2_t.new(m_ScreenSize.x * plant_percentage, -2), string.format("%.1f", plant_time))
+        return
+    end
+
+    plant_end = 0.0
    
     local bomb_time         = bomb:get_prop_float(m_flC4Blow) - globalvars.get_current_time()
     local bomb_percentage   = bomb_time / bomb:get_prop_float(m_flTimerLength)
